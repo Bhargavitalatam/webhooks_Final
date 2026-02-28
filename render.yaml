@@ -1,7 +1,84 @@
+databases:
+  - name: postgres-gateway
+    plan: free
+
 services:
+  # 1. Redis Key-Value Store
+  - type: keyvalue
+    name: redis-gateway
+    plan: free
+
+  # 2. API Server
   - type: web
-    name: webhook-api
+    name: gateway-api
     env: docker
-    repo: https://github.com/Bhargavitalatam/webhooks_Final
-    branch: main
-    dockerCommand: docker-compose up
+    dockerContext: ./backend
+    dockerfilePath: Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres-gateway
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: redis-gateway
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: API_SECRET_SALT
+        generateValue: true
+
+  # 3. Background Worker
+  - type: worker
+    name: gateway-worker
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: Dockerfile.worker
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres-gateway
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: redis-gateway
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+  # 4. Merchant Dashboard
+  - type: web
+    name: gateway-dashboard
+    env: docker
+    dockerContext: ./dashboard
+    dockerfilePath: Dockerfile
+    plan: free
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: gateway-api
+          property: host
+
+  # 5. Checkout Page
+  - type: web
+    name: gateway-checkout
+    env: docker
+    dockerContext: ./checkout
+    dockerfilePath: Dockerfile
+    plan: free
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: gateway-api
+          property: host
