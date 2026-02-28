@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: webhook-api
+    env: docker
+    repo: https://github.com/Bhargavitalatam/webhooks_Final
+    branch: main
+    dockerCommand: docker-compose up
