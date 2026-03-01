@@ -3,17 +3,16 @@ databases:
     plan: free
 
 services:
-  # 1. Redis Key-Value Store
   - type: keyvalue
     name: redis-gateway
     plan: free
+    ipAllowList: []
 
-  # 2. API Server
   - type: web
     name: gateway-api
     env: docker
     dockerContext: ./backend
-    dockerfilePath: Dockerfile
+    dockerfilePath: ./backend/Dockerfile
     plan: free
     healthCheckPath: /health
     envVars:
@@ -35,12 +34,11 @@ services:
       - key: API_SECRET_SALT
         generateValue: true
 
-  # 3. Background Worker
-  - type: worker
+  - type: web
     name: gateway-worker
     env: docker
     dockerContext: ./backend
-    dockerfilePath: Dockerfile.worker
+    dockerfilePath: ./backend/Dockerfile.worker
     plan: free
     envVars:
       - key: DATABASE_URL
@@ -55,12 +53,11 @@ services:
       - key: NODE_ENV
         value: production
 
-  # 4. Merchant Dashboard
   - type: web
     name: gateway-dashboard
     env: docker
     dockerContext: ./dashboard
-    dockerfilePath: Dockerfile
+    dockerfilePath: ./dashboard/Dockerfile
     plan: free
     envVars:
       - key: REACT_APP_API_URL
@@ -69,12 +66,11 @@ services:
           name: gateway-api
           property: host
 
-  # 5. Checkout Page
   - type: web
     name: gateway-checkout
     env: docker
     dockerContext: ./checkout
-    dockerfilePath: Dockerfile
+    dockerfilePath: ./checkout/Dockerfile
     plan: free
     envVars:
       - key: REACT_APP_API_URL
