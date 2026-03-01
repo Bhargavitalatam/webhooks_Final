@@ -1,4 +1,15 @@
 const http = require('http');
+
+// Health check HTTP server (required for Render web service)
+const PORT = process.env.PORT || 3002;
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', service: 'worker' }));
+});
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🔍 Worker health check running on port ${PORT}`);
+});
+
 const { paymentQueue, webhookQueue, refundQueue } = require('../config/queue');
 const { processPayment } = require('../jobs/ProcessPaymentJob');
 const { deliverWebhook } = require('../jobs/DeliverWebhookJob');
@@ -53,16 +64,6 @@ console.log('📋 Listening for jobs on:');
 console.log('   - payment-processing queue');
 console.log('   - webhook-delivery queue');
 console.log('   - refund-processing queue');
-
-// Health check HTTP server (required for Render web service)
-const PORT = process.env.PORT || 3002;
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', service: 'worker' }));
-});
-server.listen(PORT, () => {
-    console.log(`🔍 Worker health check running on port ${PORT}`);
-});
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
